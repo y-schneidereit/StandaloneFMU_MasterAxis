@@ -7,6 +7,54 @@
 #define GUID "{5beffd4c-c998-a7d1-125b-f08aec717ec5}"
 #define RESOURCE_LOCATION "file:///C:/Users/schyan01/github/StandaloneFMU_MasterAxis/MasterAxis" // absolut path to the unziped fmu
 
+HANDLE hFile;
+DWORD bytes_writed = 0;
+DWORD bytes_readed = 0;
+fmi2Boolean write_successful;
+fmi2Boolean read_successful;
+
+int write_file(LPCSTR absolut_pfad, LPCVOID write_buffer)					// Schreiben des Files
+{
+	hFile = CreateFileA(absolut_pfad,	// Filename
+		GENERIC_WRITE | GENERIC_READ,	// Desired access
+		0,								// Share flags
+		NULL,							// Security Attributes
+		OPEN_ALWAYS,					// Creation Disposition
+		FILE_ATTRIBUTE_NORMAL,			// Flags and Attributes
+		NULL);							// HANDLE hFile Template	
+
+	write_successful = WriteFile(hFile,							// Handle
+		write_buffer,			// Data to be write
+		sizeof(write_buffer),	// Size of data, in bytes
+		&bytes_writed,			// Number of bytes writed
+		NULL);					// OVERLAPPED pointer
+
+	CloseHandle(hFile);
+
+	return 0;
+}
+
+int read_file(LPCSTR absolut_pfad, LPVOID read_buffer)						// Lesen des Files
+{
+	hFile = CreateFileA(absolut_pfad,	// Filename
+		GENERIC_WRITE | GENERIC_READ,	// Desired access
+		0,								// Share flags
+		NULL,							// Security Attributes
+		OPEN_ALWAYS,					// Creation Disposition
+		FILE_ATTRIBUTE_NORMAL,			// Flags and Attributes
+		NULL);							// HANDLE hFileTemplate	
+
+	read_successful = ReadFile(hFile,					// Handle
+		read_buffer,			// Data to be read
+		sizeof(read_buffer),	// Size of data, in bytes
+		&bytes_readed,			// Number of bytes readed
+		NULL);					// OVERLAPPED pointer
+
+	CloseHandle(hFile);
+
+	return 0;
+}
+
 // callback functions
 static void cb_logMessage(fmi2ComponentEnvironment componentEnvironment, fmi2String instanceName, fmi2Status status, fmi2String category, fmi2String message, ...) {
 	printf("%s\n", message);
@@ -94,12 +142,18 @@ int main(int argc, char *argv[])
 	}
 
 	fmi2Real Time = 0;
+	double TimeOld = 0;
+	double TimeTemp = 0;
+	double TimeCurrent = 0;
+	double TimeOffset = 0;
+	double stepSize_d = 0.1;
 	fmi2Real stepSize = 0.1;
 	fmi2Real tolerance = 0.001;
 	fmi2Real stopTime = 10;
 
+	float Position32;
 	fmi2ValueReference Position_ref = 0;
-	fmi2Real Position = 0;
+	fmi2Real Position = 5;
 
 	fmi2ValueReference Geschwindigkeit_ref = 1;
 	fmi2Real Geschwindigkeit = 0;
@@ -113,7 +167,7 @@ int main(int argc, char *argv[])
 	fmi2ValueReference PT1_ref = 4;
 	fmi2Real PT1 = 0;
 
-	fmi2ValueReference PT2_ref = 3;
+	fmi2ValueReference PT2_ref = 5;
 	fmi2Real PT2 = 0;
 	
 	// Informs the FMU to setup the experiment. Must be called after fmi2Instantiate and befor fmi2EnterInitializationMode
@@ -126,26 +180,44 @@ int main(int argc, char *argv[])
 
 	CHECK_STATUS(ExitInitializationModePtr(c));
 	
-	printf("time, Position, Geschwindigkeit, Beschleunigung, Ruck, PT1, PT2\n");
+	printf("time, Geschwindigkeit, Beschleunigung, Ruck, PT1, PT2\n");
 	
-	for (int nSteps = 0; nSteps <= 20; nSteps++)
+	//CHECK_STATUS(DoStepPtr(c, Time, stepSize, fmi2True));	//The computation of a time step is started./*
+	
+	read_file("C:\\Users\\schyan01\\git\\masteraxis\\Time", &TimeOffset);
+	Time = TimeOffset - fmod(TimeOffset, stepSize_d);
+	
+	//for (int nSteps = 0; nSteps <= 20; nSteps++)
+		//Time = nSteps * stepSize;
+	while(1)
 	{
-		Time = nSteps * stepSize;
+		read_file("C:\\Users\\schyan01\\git\\masteraxis\\Time", &TimeTemp);
+		
+		if(TimeTemp>Time)
+		{
+			read_file("C:\\Users\\schyan01\\git\\masteraxis\\Position", &Position32);
+			Position = Position32;
+			
+			// set an input
+			CHECK_STATUS(SetRealPtr(c, &Position_ref, 1, &Position));
+			//TimeCurrent = TimeTemp - TimeOffset;
+			//Time = TimeCurrent - fmod(TimeCurrent, stepSize_d);
+			// perform a simulation step
+			// TODO:Abfrage Stepsize > 0
+			CHECK_STATUS(DoStepPtr(c, Time-TimeOffset, stepSize, fmi2True));	//The computation of a time step is started./*
 
-		// set an input
-		CHECK_STATUS(SetRealPtr(c, &Position_ref, 1, &Position));
+			// get an output
+			CHECK_STATUS(GetRealPtr(c, &Geschwindigkeit_ref, 1, &Geschwindigkeit));
+			CHECK_STATUS(GetRealPtr(c, &Beschleunigung_ref, 1, &Beschleunigung));
+			CHECK_STATUS(GetRealPtr(c, &Ruck_ref, 1, &Ruck));
+			CHECK_STATUS(GetRealPtr(c, &PT1_ref, 1, &PT1));
+			CHECK_STATUS(GetRealPtr(c, &PT2_ref, 1, &PT2));
 
-		// perform a simulation step
-		CHECK_STATUS(DoStepPtr(c, Time, stepSize, fmi2True));	//The computation of a time step is started./*
+			printf("%.2f, %.2f, %.2f, %.2f, %.2f, %.2f\n", Time, Geschwindigkeit, Beschleunigung, Ruck, PT1, PT2);
 
-		// get an output
-		CHECK_STATUS(GetRealPtr(c, &Geschwindigkeit_ref, 1, &Geschwindigkeit));
-		CHECK_STATUS(GetRealPtr(c, &Beschleunigung_ref, 1, &Beschleunigung));
-		CHECK_STATUS(GetRealPtr(c, &Ruck_ref, 1, &Ruck));
-		CHECK_STATUS(GetRealPtr(c, &PT1_ref, 1, &PT1));
-		CHECK_STATUS(GetRealPtr(c, &PT2_ref, 1, &PT2));
-
-		printf("%.2f, %.2f, %.2f, %.2f, %.2f, %.2f\n", Time, Geschwindigkeit, Beschleunigung, Ruck, PT1, PT2);
+			//TimeOld = TimeTemp;
+			Time += stepSize;
+		}
 	}
 	TerminatePtr(c);
 
