@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
 
 	fmi2Real Time = 0;
 	double TimeOld = 0;
-	double TimeTemp = 0;
+	fmi2Real TimeTemp = 0;
 	double TimeCurrent = 0;
 	double TimeOffset = 0;
 	double stepSize_d = 0.1;
@@ -184,15 +184,15 @@ int main(int argc, char *argv[])
 	
 	//CHECK_STATUS(DoStepPtr(c, Time, stepSize, fmi2True));	//The computation of a time step is started./*
 	
-	read_file("C:\\Users\\schyan01\\git\\masteraxis\\Time", &TimeOffset);
-	Time = TimeOffset - fmod(TimeOffset, stepSize_d);
+	//read_file("C:\\Users\\schyan01\\git\\masteraxis\\Time", &TimeOffset);
+	//Time = TimeOffset - fmod(TimeOffset, stepSize_d);
 	
 	//for (int nSteps = 0; nSteps <= 20; nSteps++)
 		//Time = nSteps * stepSize;
 	while(1)
 	{
 		read_file("C:\\Users\\schyan01\\git\\masteraxis\\Time", &TimeTemp);
-		
+		Sleep(5);
 		if(TimeTemp>Time)
 		{
 			read_file("C:\\Users\\schyan01\\git\\masteraxis\\Position", &Position32);
@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
 			//Time = TimeCurrent - fmod(TimeCurrent, stepSize_d);
 			// perform a simulation step
 			// TODO:Abfrage Stepsize > 0
-			CHECK_STATUS(DoStepPtr(c, Time-TimeOffset, stepSize, fmi2True));	//The computation of a time step is started./*
+			CHECK_STATUS(DoStepPtr(c, Time/*-TimeOffset*/, stepSize, fmi2True));	//The computation of a time step is started.
 
 			// get an output
 			CHECK_STATUS(GetRealPtr(c, &Geschwindigkeit_ref, 1, &Geschwindigkeit));
