@@ -4,8 +4,8 @@
 #include "fmi2Functions.h"
 
 // model specific constants
-#define GUID "{Altair-MotionView: PickAndPlace.fmu: 1648708627.5544791}"
-#define RESOURCE_LOCATION "file:///C:/Users/schyan01/github/StandaloneFMU_PickAndPlace/PickUndPlace/resources" // absolut path to the unziped fmu
+#define GUID "{5beffd4c-c998-a7d1-125b-f08aec717ec5}"
+#define RESOURCE_LOCATION "file:///C:/Users/schyan01/github/StandaloneFMU_MasterAxis/MasterAxis" // absolut path to the unziped fmu
 
 // callback functions
 static void cb_logMessage(fmi2ComponentEnvironment componentEnvironment, fmi2String instanceName, fmi2Status status, fmi2String category, fmi2String message, ...) {
@@ -22,43 +22,9 @@ static void cb_freeMemory(void* obj) {
 
 #define CHECK_STATUS(S) { status = S; if (status != fmi2OK) goto TERMINATE; }
 
-#include <strsafe.h>
-void ErrorExit(LPTSTR lpszFunction)
-{
-	// Retrieve the system error message for the last-error code
-
-	LPVOID lpMsgBuf;
-	LPVOID lpDisplayBuf;
-	DWORD dw = GetLastError();
-
-	FormatMessage(
-		FORMAT_MESSAGE_ALLOCATE_BUFFER |
-		FORMAT_MESSAGE_FROM_SYSTEM |
-		FORMAT_MESSAGE_IGNORE_INSERTS,
-		NULL,
-		dw,
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		(LPTSTR)&lpMsgBuf,
-		0, NULL);
-
-	// Display the error message and exit the process
-
-	lpDisplayBuf = (LPVOID)LocalAlloc(LMEM_ZEROINIT,
-		(lstrlen((LPCTSTR)lpMsgBuf) + lstrlen((LPCTSTR)lpszFunction) + 40) * sizeof(TCHAR));
-	StringCchPrintf((LPTSTR)lpDisplayBuf,
-		LocalSize(lpDisplayBuf) / sizeof(TCHAR),
-		TEXT("%s failed with error %d: %s"),
-		lpszFunction, dw, lpMsgBuf);
-	MessageBox(NULL, (LPCTSTR)lpDisplayBuf, TEXT("Error"), MB_OK);
-
-	LocalFree(lpMsgBuf);
-	LocalFree(lpDisplayBuf);
-	ExitProcess(dw);
-}
-
 int main(int argc, char *argv[]) 
 {
-	HMODULE libraryHandle = LoadLibraryA("C:\\Users\\schyan01\\github\\StandaloneFMU_PickAndPlace\\PickUndPlace\\binaries\\win64\\msfmu.dll");
+	HMODULE libraryHandle = LoadLibraryA("C:\\Users\\schyan01\\github\\StandaloneFMU_MasterAxis\\MasterAxis\\binaries\\win64\\MasterAxis.dll");
 
 	if (!libraryHandle)
 	{
@@ -120,7 +86,7 @@ int main(int argc, char *argv[])
 	fmi2String version = GetVersion();
 	printf("%s\n", version);
 	
-	fmi2Component c = InstantiatePtr("instance1", fmi2CoSimulation, GUID, RESOURCE_LOCATION, &callbacks, fmi2False, fmi2True);
+	fmi2Component c = InstantiatePtr("instance1", fmi2CoSimulation, GUID, RESOURCE_LOCATION, &callbacks, fmi2False, fmi2False);
 	
 	if (!c)
 	{
@@ -128,55 +94,60 @@ int main(int argc, char *argv[])
 	}
 
 	fmi2Real Time = 0;
-	fmi2Real stepSize = 1;
+	fmi2Real stepSize = 0.1;
 	fmi2Real tolerance = 0.001;
-	fmi2Real stopTime = 9;
+	fmi2Real stopTime = 10;
+
+	fmi2ValueReference Position_ref = 0;
+	fmi2Real Position = 0;
+
+	fmi2ValueReference Geschwindigkeit_ref = 1;
+	fmi2Real Geschwindigkeit = 0;
+
+	fmi2ValueReference Beschleunigung_ref = 2;
+	fmi2Real Beschleunigung = 0;
+
+	fmi2ValueReference Ruck_ref = 3;
+	fmi2Real Ruck = 0;
+
+	fmi2ValueReference PT1_ref = 4;
+	fmi2Real PT1 = 0;
+
+	fmi2ValueReference PT2_ref = 3;
+	fmi2Real PT2 = 0;
 	
 	// Informs the FMU to setup the experiment. Must be called after fmi2Instantiate and befor fmi2EnterInitializationMode
 	CHECK_STATUS(SetupExperimentPtr(c, fmi2False, tolerance, Time, fmi2False, stopTime));
 	
-	HRESULT hrReturnVal;
-	hrReturnVal = EnterInitializationModePtr(c);
 	// Informs the FMU to enter Initialization Mode.
-	//CHECK_STATUS(EnterInitializationModePtr(c));
-	//ErrorExit(TEXT("EnterInitializationModePtr"));
-	fmi2ValueReference z_command_ref = 0;
-	fmi2Real z_command = 0;
-
-	fmi2ValueReference z_override_ref = 1;
-	fmi2Real z_override = 0;
-
-	fmi2ValueReference y_command_ref = 2;
-	fmi2Real y_command = 0;
+	CHECK_STATUS(EnterInitializationModePtr(c));
 	
-	fmi2ValueReference y_override_ref = 3;
-	fmi2Real y_override = 0;
+	CHECK_STATUS(SetRealPtr(c, &Position_ref, 1, &Position));
 
-	CHECK_STATUS(SetRealPtr(c, &z_command_ref, 1, &z_command));
-	CHECK_STATUS(SetRealPtr(c, &z_override_ref, 1, &z_override));
-	CHECK_STATUS(SetRealPtr(c, &y_command_ref, 1, &y_command));
-	CHECK_STATUS(SetRealPtr(c, &y_override_ref, 1, &y_override));
-
-	//CHECK_STATUS(ExitInitializationModePtr(c));
-	/*
-	printf("time, u, T\n");
-
-	//for (int nSteps = 0; nSteps <= 20; nSteps++)
-	//{
-		//Time = nSteps * stepSize;
+	CHECK_STATUS(ExitInitializationModePtr(c));
+	
+	printf("time, Position, Geschwindigkeit, Beschleunigung, Ruck, PT1, PT2\n");
+	
+	for (int nSteps = 0; nSteps <= 20; nSteps++)
+	{
+		Time = nSteps * stepSize;
 
 		// set an input
-		//CHECK_STATUS(fmi2SetBoolean(c, &u_ref, 1, &u));
+		CHECK_STATUS(SetRealPtr(c, &Position_ref, 1, &Position));
 
 		// perform a simulation step
-		*///CHECK_STATUS(DoStepPtr(c, Time, stepSize, fmi2True));	//The computation of a time step is started./*
-		
+		CHECK_STATUS(DoStepPtr(c, Time, stepSize, fmi2True));	//The computation of a time step is started./*
+
 		// get an output
-		//CHECK_STATUS(fmi2GetBoolean(c, &T_ref, 1, &T));
-		
-		//printf("%.2f, %d, %d\n", Time, u, T);
-	//}
-	//TerminatePtr(c);*/
+		CHECK_STATUS(GetRealPtr(c, &Geschwindigkeit_ref, 1, &Geschwindigkeit));
+		CHECK_STATUS(GetRealPtr(c, &Beschleunigung_ref, 1, &Beschleunigung));
+		CHECK_STATUS(GetRealPtr(c, &Ruck_ref, 1, &Ruck));
+		CHECK_STATUS(GetRealPtr(c, &PT1_ref, 1, &PT1));
+		CHECK_STATUS(GetRealPtr(c, &PT2_ref, 1, &PT2));
+
+		printf("%.2f, %.2f, %.2f, %.2f, %.2f, %.2f\n", Time, Geschwindigkeit, Beschleunigung, Ruck, PT1, PT2);
+	}
+	TerminatePtr(c);
 
 TERMINATE:
 	// clean up
