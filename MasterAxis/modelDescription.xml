@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<fmiModelDescription
+  fmiVersion="2.0"
+  modelName="MasterAxis"
+  guid="{5beffd4c-c998-a7d1-125b-f08aec717ec5}"
+  description=""
+  generationTool="Simulink (R2021b)"
+  version="1.3"
+  variableNamingConvention="structured"
+  generationDateAndTime="2022-04-08T09:18:02Z"
+  numberOfEventIndicators="0">
+
+<CoSimulation
+  modelIdentifier="MasterAxis"
+  canBeInstantiatedOnlyOncePerProcess="true"
+  canNotUseMemoryManagementFunctions="true"
+  />
+<DefaultExperiment startTime="0" stopTime="10" stepSize="0.1"/>
+<VendorAnnotations>
+  <Tool name="Simulink">
+    <Simulink>
+      <ImportCompatibility requireRelease="all" requireMATLABOnPath="no" />
+      <SimulinkModelInterface>
+        <Inport dataType="double" portNumber="1" portName="Position"/>
+        <Outport dataType="double" portNumber="1" portName="Geschwindigkeit"/>
+        <Outport dataType="double" portNumber="2" portName="Beschleunigung"/>
+        <Outport dataType="double" portNumber="3" portName="Ruck"/>
+        <Outport dataType="double" portNumber="4" portName="Position_verzögert_PT1"/>
+        <Outport dataType="double" portNumber="5" portName="Position_verzögert_PT2"/>
+      </SimulinkModelInterface>
+    </Simulink>
+  </Tool>
+</VendorAnnotations>
+<ModelVariables>
+  <ScalarVariable name="Position" valueReference="0" description="Position" causality="input" variability="continuous" >
+    <Real start="0"  />
+  </ScalarVariable> <!-- index="1" -->
+  <ScalarVariable name="Geschwindigkeit" valueReference="1" description="Geschwindigkeit" causality="output" variability="continuous" initial="calculated">
+    <Real  />
+  </ScalarVariable> <!-- index="2" -->
+  <ScalarVariable name="Beschleunigung" valueReference="2" description="Beschleunigung" causality="output" variability="continuous" initial="calculated">
+    <Real  />
+  </ScalarVariable> <!-- index="3" -->
+  <ScalarVariable name="Ruck" valueReference="3" description="Ruck" causality="output" variability="continuous" initial="calculated">
+    <Real  />
+  </ScalarVariable> <!-- index="4" -->
+  <ScalarVariable name="Position_verz_gert_PT1" valueReference="4" description="Position_verzögert_PT1" causality="output" variability="continuous" initial="calculated">
+    <Real  />
+  </ScalarVariable> <!-- index="5" -->
+  <ScalarVariable name="Position_verz_gert_PT2" valueReference="5" description="Position_verzögert_PT2" causality="output" variability="continuous" initial="calculated">
+    <Real  />
+  </ScalarVariable> <!-- index="6" -->
+  <ScalarVariable name="time" valueReference="6" description="time" causality="independent" variability="continuous" >
+    <Real  />
+  </ScalarVariable> <!-- index="7" -->
+</ModelVariables>
+<ModelStructure>
+  <Outputs>
+    <Unknown index="2" />
+    <Unknown index="3" />
+    <Unknown index="4" />
+    <Unknown index="5" />
+    <Unknown index="6" />
+  </Outputs>
+  <InitialUnknowns>
+    <Unknown index="2" />
+    <Unknown index="3" />
+    <Unknown index="4" />
+    <Unknown index="5" />
+    <Unknown index="6" />
+  </InitialUnknowns>
+</ModelStructure>
+</fmiModelDescription>
+
