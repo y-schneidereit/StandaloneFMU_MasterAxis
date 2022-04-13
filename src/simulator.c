@@ -5,7 +5,7 @@
 #include "fmi2Functions.h"
 
 // model specific constants
-#define GUID "{5beffd4c-c998-a7d1-125b-f08aec717ec5}"
+#define GUID "{5beffd4c-c998-a7d1-125b-f08aec717ec5}"	// GUID of the modell (see modelDescription.xml)
 #define RESOURCE_LOCATION "file:///C:/Users/schyan01/github/StandaloneFMU_MasterAxis/MasterAxis" // absolut path to the unziped fmu
 
 HANDLE hFile;
@@ -57,15 +57,22 @@ int read_file(LPCSTR absolut_pfad, LPVOID read_buffer)						// Lesen des Files
 }
 
 // callback functions
-static void cb_logMessage(fmi2ComponentEnvironment componentEnvironment, fmi2String instanceName, fmi2Status status, fmi2String category, fmi2String message, ...) {
+static void cb_logMessage(	fmi2ComponentEnvironment componentEnvironment, 
+							fmi2String instanceName, 
+							fmi2Status status,
+							fmi2String category, 
+							fmi2String message, ...)
+{
 	printf("%s\n", message);
 }
 
-static void* cb_allocateMemory(size_t nobj, size_t size) {
+static void* cb_allocateMemory(size_t nobj, size_t size)
+{
 	return calloc(nobj, size);
 }
 
-static void cb_freeMemory(void* obj) {
+static void cb_freeMemory(void* obj)
+{
 	free(obj);
 }
 
@@ -127,7 +134,11 @@ int main(int argc, char *argv[])
 
 	fmi2Status status = fmi2OK;
 
-	fmi2CallbackFunctions callbacks = {cb_logMessage, cb_allocateMemory, cb_freeMemory, NULL, NULL};
+	fmi2CallbackFunctions callbacks = {	cb_logMessage,		// void (*logger)
+										cb_allocateMemory,	// void* (*allocateMemory)
+										cb_freeMemory,		// void (*freeMemory)
+										NULL,				// void (*stepFinished)
+										NULL};				// fmi2ComponentEnvironment
 
 	fmi2String platform = GetTypesPlatform();
 	printf("%s\n", platform);
@@ -135,7 +146,13 @@ int main(int argc, char *argv[])
 	fmi2String version = GetVersion();
 	printf("%s\n", version);
 	
-	fmi2Component c = InstantiatePtr("instance1", fmi2CoSimulation, GUID, RESOURCE_LOCATION, &callbacks, fmi2False, fmi2False);
+	fmi2Component c = InstantiatePtr(	"instance1",		// Name der Instanz
+										fmi2CoSimulation,	// fmuType
+										GUID,				// fmuGUID
+										RESOURCE_LOCATION,	// fmuResourceLocation
+										&callbacks,			// *CallbackFunctions
+										fmi2False,			// Batch mode = false/ interactive mode = true
+										fmi2False);			// Debug Logging
 	
 	if (!c)
 	{
@@ -171,11 +188,13 @@ int main(int argc, char *argv[])
 	// Informs the FMU to setup the experiment. Must be called after fmi2Instantiate and befor fmi2EnterInitializationMode
 	CHECK_STATUS(SetupExperimentPtr(c, fmi2False, tolerance, FMUTime, fmi2False, stopTime));
 	
-	// Informs the FMU to enter Initialization Mode.
+	// Informs the FMU to enter Initialization Mode
 	CHECK_STATUS(EnterInitializationModePtr(c));
 	
+	// Set Start Values
 	CHECK_STATUS(SetRealPtr(c, &Position_ref, 1, &Position));
 
+	// Informs the FMU to exit Initialization Mode
 	CHECK_STATUS(ExitInitializationModePtr(c));
 	
 	printf("FMUTime, iPhysicsTime, Geschwindigkeit, Beschleunigung, Ruck, PT1, PT2\n");
@@ -225,7 +244,8 @@ int main(int argc, char *argv[])
 
 TERMINATE:
 	// clean up
-	if (status < fmi2Fatal) {
+	if (status < fmi2Fatal)
+	{
 		FreeInstancePtr(c);
 	}
 	
