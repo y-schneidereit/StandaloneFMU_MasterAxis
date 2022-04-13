@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <Windows.h>
+#include <time.h>
 
 #include "fmi2Functions.h"
 
@@ -141,19 +142,15 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	fmi2Real Time = 0;
-	double TimeOld = 0;
-	fmi2Real TimeTemp = 0;
-	double TimeCurrent = 0;
-	double TimeOffset = 0;
-	double stepSize_d = 0.1;
+	fmi2Real FMUTime = 0;
+	fmi2Real iPysicsTime = 0;
 	fmi2Real stepSize = 0.1;
 	fmi2Real tolerance = 0.001;
 	fmi2Real stopTime = 10;
 
-	float Position32;
 	fmi2ValueReference Position_ref = 0;
 	fmi2Real Position = 5;
+	float Position32;
 
 	fmi2ValueReference Geschwindigkeit_ref = 1;
 	fmi2Real Geschwindigkeit = 0;
@@ -169,9 +166,10 @@ int main(int argc, char *argv[])
 
 	fmi2ValueReference PT2_ref = 5;
 	fmi2Real PT2 = 0;
+	float PT232;
 	
 	// Informs the FMU to setup the experiment. Must be called after fmi2Instantiate and befor fmi2EnterInitializationMode
-	CHECK_STATUS(SetupExperimentPtr(c, fmi2False, tolerance, Time, fmi2False, stopTime));
+	CHECK_STATUS(SetupExperimentPtr(c, fmi2False, tolerance, FMUTime, fmi2False, stopTime));
 	
 	// Informs the FMU to enter Initialization Mode.
 	CHECK_STATUS(EnterInitializationModePtr(c));
@@ -180,31 +178,23 @@ int main(int argc, char *argv[])
 
 	CHECK_STATUS(ExitInitializationModePtr(c));
 	
-	printf("time, Geschwindigkeit, Beschleunigung, Ruck, PT1, PT2\n");
+	printf("FMUTime, iPhysicsTime, Geschwindigkeit, Beschleunigung, Ruck, PT1, PT2\n");
 	
-	//CHECK_STATUS(DoStepPtr(c, Time, stepSize, fmi2True));	//The computation of a time step is started./*
-	
-	//read_file("C:\\Users\\schyan01\\git\\masteraxis\\Time", &TimeOffset);
-	//Time = TimeOffset - fmod(TimeOffset, stepSize_d);
-	
-	//for (int nSteps = 0; nSteps <= 20; nSteps++)
-		//Time = nSteps * stepSize;
 	while(1)
 	{
-		read_file("C:\\Users\\schyan01\\git\\masteraxis\\Time", &TimeTemp);
-		Sleep(5);
-		if(TimeTemp>Time)
+		clock_t begin = clock();	// Makroschrittweite
+		read_file("C:\\Users\\schyan01\\git\\temp\\Time", &iPysicsTime);	// Mikroschrittweite iPhysics
+		
+		if(iPysicsTime>FMUTime)
 		{
-			read_file("C:\\Users\\schyan01\\git\\masteraxis\\Position", &Position32);
-			Position = Position32;
+			read_file("C:\\Users\\schyan01\\git\\temp\\Position", &Position32);	// Lesen von KinAxis von Masterachse
+			Position = Position32;	// Typecast, da FMI keine Float32 Variable
 			
 			// set an input
 			CHECK_STATUS(SetRealPtr(c, &Position_ref, 1, &Position));
-			//TimeCurrent = TimeTemp - TimeOffset;
-			//Time = TimeCurrent - fmod(TimeCurrent, stepSize_d);
+			
 			// perform a simulation step
-			// TODO:Abfrage Stepsize > 0
-			CHECK_STATUS(DoStepPtr(c, Time/*-TimeOffset*/, stepSize, fmi2True));	//The computation of a time step is started.
+			CHECK_STATUS(DoStepPtr(c, FMUTime, stepSize, fmi2True));	// The computation of a time step is started.
 
 			// get an output
 			CHECK_STATUS(GetRealPtr(c, &Geschwindigkeit_ref, 1, &Geschwindigkeit));
@@ -213,11 +203,23 @@ int main(int argc, char *argv[])
 			CHECK_STATUS(GetRealPtr(c, &PT1_ref, 1, &PT1));
 			CHECK_STATUS(GetRealPtr(c, &PT2_ref, 1, &PT2));
 
-			printf("%.2f, %.2f, %.2f, %.2f, %.2f, %.2f\n", Time, Geschwindigkeit, Beschleunigung, Ruck, PT1, PT2);
+			printf("FMUt, iPhit, v   , a   , j   , PT1  , PT2\n");
+			printf("%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\n", FMUTime, iPysicsTime, Geschwindigkeit, Beschleunigung, Ruck, PT1, PT2);
 
-			//TimeOld = TimeTemp;
-			Time += stepSize;
+			FMUTime += stepSize;	// Mikroschrittweite FMU
 		}
+
+		PT232 = PT2;	// Typecast, da FMI keine Float32 Variable
+		write_file("C:\\Users\\schyan01\\git\\temp\\PT2", &PT232);	// Schreiben von PT232 für Realachse
+
+		clock_t end = clock();
+		double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;	// Differenzzeit in Sekunden
+		while (time_spent < 0.1)	// Makroschrittweite = 0.1 s
+		{
+			end = clock();
+			time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+		}
+		printf("%.2f\n", time_spent);
 	}
 	TerminatePtr(c);
 
