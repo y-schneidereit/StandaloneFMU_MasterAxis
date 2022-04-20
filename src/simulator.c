@@ -5,7 +5,7 @@
 #include "fmi2Functions.h"
 
 // model specific constants
-#define GUID "{5beffd4c-c998-a7d1-125b-f08aec717ec5}"	// GUID of the modell (see modelDescription.xml)
+#define GUID "{936d202c-3461-fcb9-ccda-2a99a4561bb9}"	// GUID of the modell (see modelDescription.xml)
 #define RESOURCE_LOCATION "file:///C:/Users/schyan01/github/StandaloneFMU_MasterAxis/MasterAxis" // absolut path to the unziped fmu
 
 HANDLE hFile;
@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
 
 	fmi2Real FMUTime = 0;
 	fmi2Real iPysicsTime = 0;
-	fmi2Real stepSize = 0.1;
+	fmi2Real stepSize = 0.01;
 	fmi2Real tolerance = 0.001;
 	fmi2Real stopTime = 10;
 
@@ -222,7 +222,7 @@ int main(int argc, char *argv[])
 			CHECK_STATUS(GetRealPtr(c, &PT1_ref, 1, &PT1));
 			CHECK_STATUS(GetRealPtr(c, &PT2_ref, 1, &PT2));
 
-			printf("FMUt, iPhit, v   , a   , j   , PT1  , PT2\n");
+			printf("FMUt, iPhit, v   , a   , j   , PT1  , Position\n");
 			printf("%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\n", FMUTime, iPysicsTime, Geschwindigkeit, Beschleunigung, Ruck, PT1, PT2);
 
 			FMUTime += stepSize;	// Mikroschrittweite FMU
@@ -233,11 +233,13 @@ int main(int argc, char *argv[])
 
 		clock_t end = clock();
 		double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;	// Differenzzeit in Sekunden
-		while (time_spent < 0.1)	// Makroschrittweite = 0.1 s
+		while (time_spent < 0.01)	// Makroschrittweite = 0.01 s
 		{
 			end = clock();
 			time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
 		}
+
+		printf("Makroschrittweite: ");
 		printf("%.2f\n", time_spent);
 	}
 	TerminatePtr(c);
