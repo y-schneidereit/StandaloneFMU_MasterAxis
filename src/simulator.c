@@ -5,7 +5,7 @@
 #include "fmi2Functions.h"
 
 // model specific constants
-#define GUID "{936d202c-3461-fcb9-ccda-2a99a4561bb9}"	// GUID of the modell (see modelDescription.xml)
+#define GUID "{c460ad27-0b43-bbc1-e613-0b6af5df7d2c}"	// GUID of the modell (see modelDescription.xml)
 #define RESOURCE_LOCATION "file:///C:/Users/schyan01/github/StandaloneFMU_MasterAxis/MasterAxis" // absolut path to the unziped fmu
 
 HANDLE hFile;
@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
 
 	fmi2Real FMUTime = 0;
 	fmi2Real iPysicsTime = 0;
-	fmi2Real stepSize = 0.01;
+	fmi2Real stepSize = 0.005;
 	fmi2Real tolerance = 0.001;
 	fmi2Real stopTime = 10;
 
@@ -202,6 +202,7 @@ int main(int argc, char *argv[])
 	while(1)
 	{
 		clock_t begin = clock();	// Makroschrittweite
+		
 		read_file("C:\\Users\\schyan01\\git\\temp\\Time", &iPysicsTime);	// Mikroschrittweite iPhysics
 		
 		if(iPysicsTime>FMUTime)
@@ -213,17 +214,18 @@ int main(int argc, char *argv[])
 			CHECK_STATUS(SetRealPtr(c, &Position_ref, 1, &Position));
 			
 			// perform a simulation step
+			
 			CHECK_STATUS(DoStepPtr(c, FMUTime, stepSize, fmi2True));	// The computation of a time step is started.
-
+			
 			// get an output
 			CHECK_STATUS(GetRealPtr(c, &Geschwindigkeit_ref, 1, &Geschwindigkeit));
 			CHECK_STATUS(GetRealPtr(c, &Beschleunigung_ref, 1, &Beschleunigung));
 			CHECK_STATUS(GetRealPtr(c, &Ruck_ref, 1, &Ruck));
 			CHECK_STATUS(GetRealPtr(c, &PT1_ref, 1, &PT1));
 			CHECK_STATUS(GetRealPtr(c, &PT2_ref, 1, &PT2));
-
+			
 			printf("FMUt, iPhit, v   , a   , j   , PT1  , Position\n");
-			printf("%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\n", FMUTime, iPysicsTime, Geschwindigkeit, Beschleunigung, Ruck, PT1, PT2);
+			printf("%.3f, %.3f, %.2f, %.2f, %.2f, %.2f, %.2f\n", FMUTime, iPysicsTime, Geschwindigkeit, Beschleunigung, Ruck, PT1, PT2);
 
 			FMUTime += stepSize;	// Mikroschrittweite FMU
 		}
@@ -232,15 +234,15 @@ int main(int argc, char *argv[])
 		write_file("C:\\Users\\schyan01\\git\\temp\\PT2", &PT232);	// Schreiben von PT232 für Realachse
 
 		clock_t end = clock();
-		double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;	// Differenzzeit in Sekunden
-		while (time_spent < 0.01)	// Makroschrittweite = 0.01 s
+		double time_spent = (double)((end - begin) / CLOCKS_PER_SEC);	// Differenzzeit in Sekunden
+		while (time_spent < 0.005)	// Makroschrittweite = 0.01 s
 		{
 			end = clock();
 			time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
 		}
-
+		
 		printf("Makroschrittweite: ");
-		printf("%.2f\n", time_spent);
+		printf("%.3f\n", time_spent);
 	}
 	TerminatePtr(c);
 

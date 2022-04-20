@@ -2,12 +2,12 @@
 <fmiModelDescription
   fmiVersion="2.0"
   modelName="MasterAxis"
-  guid="{936d202c-3461-fcb9-ccda-2a99a4561bb9}"
+  guid="{c460ad27-0b43-bbc1-e613-0b6af5df7d2c}"
   description=""
   generationTool="Simulink (R2021b)"
-  version="1.5"
+  version="1.6"
   variableNamingConvention="structured"
-  generationDateAndTime="2022-04-20T06:03:19Z"
+  generationDateAndTime="2022-04-20T12:40:12Z"
   numberOfEventIndicators="0">
 
 <CoSimulation
@@ -15,7 +15,7 @@
   canBeInstantiatedOnlyOncePerProcess="true"
   canNotUseMemoryManagementFunctions="true"
   />
-<DefaultExperiment startTime="0" stopTime="10" stepSize="0.01"/>
+<DefaultExperiment startTime="0" stopTime="10" stepSize="0.005"/>
 <VendorAnnotations>
   <Tool name="Simulink">
     <Simulink>
