@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
 
 	fmi2Real FMUTime = 0;
 	fmi2Real iPysicsTime = 0;
-	fmi2Real stepSize = 0.005;
+	fmi2Real stepSize = 0.1;
 	fmi2Real tolerance = 0.001;
 	fmi2Real stopTime = 10;
 
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
 
 		clock_t end = clock();
 		double time_spent = (double)((end - begin) / CLOCKS_PER_SEC);	// Differenzzeit in Sekunden
-		while (time_spent < 0.005)	// Makroschrittweite = 0.01 s
+		while (time_spent < 0.1)	// Makroschrittweite
 		{
 			end = clock();
 			time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
